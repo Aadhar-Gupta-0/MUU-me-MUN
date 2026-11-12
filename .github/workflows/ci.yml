@@ -1,0 +1,14 @@
+name: MUN payment contract checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  payment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check api/create-order.js && node --check api/verify-payment.js
+      - run: node --test tests/payment.test.cjs
