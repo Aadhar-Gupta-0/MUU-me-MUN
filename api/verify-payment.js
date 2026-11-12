@@ -10,7 +10,13 @@ module.exports = async function verifyPayment(req, res) {
     return res.status(503).json({ error: 'Payment verification is not configured yet.' });
   }
 
-  const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+  let body;
+  try {
+    body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Invalid body');
+  } catch {
+    return res.status(400).json({ error: 'A valid JSON object is required.' });
+  }
   const orderId = String(body.razorpay_order_id || '');
   const paymentId = String(body.razorpay_payment_id || '');
   const signature = String(body.razorpay_signature || '');
