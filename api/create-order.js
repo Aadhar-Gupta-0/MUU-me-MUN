@@ -14,7 +14,13 @@ module.exports = async function createOrder(req, res) {
     return res.status(503).json({ error: 'Payment gateway is not configured yet.' });
   }
 
-  const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+  let body;
+  try {
+    body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    if (!body || typeof body !== 'object' || Array.isArray(body)) throw new Error('Invalid body');
+  } catch {
+    return res.status(400).json({ error: 'A valid JSON object is required.' });
+  }
   const name = String(body.name || '').trim().slice(0, 60);
   const committee = String(body.committee || '').trim().toUpperCase();
   if (!name || !ALLOWED_COMMITTEES.has(committee)) {
