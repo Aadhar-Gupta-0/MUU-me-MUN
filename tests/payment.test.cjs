@@ -36,6 +36,12 @@ test('order creation rejects unknown committee and invalid guest details',()=>co
   await createOrder({method:'POST',body:{name:'Sample',committee:'UNKNOWN'}},res);
   assert.equal(res.code,400);
 }));
+test('misconfigured registration fees cannot create orders',()=>config({RAZORPAY_KEY_ID:'id',RAZORPAY_KEY_SECRET:'secret',REGISTRATION_FEE_INR:'100000000'},async()=>{
+  const res=response();
+  await createOrder({method:'POST',body:{name:'Sample',committee:'MCC'}},res);
+  assert.equal(res.code,503);
+}));
+
 test('signature verification rejects malformed payloads',()=>config({RAZORPAY_KEY_SECRET:'secret'},async()=>{
   const res=response();
   await verifyPayment({method:'POST',body:'{invalid json'},res);
