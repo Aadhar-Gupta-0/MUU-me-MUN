@@ -9,7 +9,8 @@ module.exports = async function createOrder(req, res) {
   const keyId = process.env.RAZORPAY_KEY_ID;
   const keySecret = process.env.RAZORPAY_KEY_SECRET;
   const feeInr = Number(process.env.REGISTRATION_FEE_INR);
-  if (!keyId || !keySecret || !Number.isFinite(feeInr) || feeInr <= 0) {
+  const amount = Math.round(feeInr * 100);
+  if (!keyId || !keySecret || !Number.isFinite(feeInr) || feeInr <= 0 || !Number.isSafeInteger(amount) || amount <= 0 || amount > 10_000_000) {
     console.error('Razorpay environment variables are incomplete');
     return res.status(503).json({ error: 'Payment gateway is not configured yet.' });
   }
@@ -27,14 +28,14 @@ module.exports = async function createOrder(req, res) {
     return res.status(400).json({ error: 'Valid delegate and committee details are required.' });
   }
 
-  const amount = Math.round(feeInr * 100);
   const receipt = ('mun26_' + crypto.randomUUID().replaceAll('-', '')).slice(0, 40);
   try {
     const auth = Buffer.from(keyId + ':' + keySecret).toString('base64');
     const response = await fetch('https://api.razorpay.com/v1/orders', {
       method: 'POST',
       headers: { Authorization: 'Basic ' + auth, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount, currency: 'INR', receipt, notes: { delegate: name, committee } })
+      body: JSON.stringify({ amount, currency: 'INR', receipt, notes: { delegate: name, committee } }),
+      signal: AbortSignal.timeout(12000)
     });
     const order = await response.json();
     if (!response.ok) {
